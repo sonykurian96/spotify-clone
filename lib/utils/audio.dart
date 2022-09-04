@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:get/get.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:spotifyui/state_management/notify.dart';
 
 class AudioPlayerPro extends StatefulWidget {
-
-  AudioPlayerPro({required this.audioURL, required this.image, required this.name});
+  AudioPlayerPro(
+      {required this.audioURL, required this.image, required this.name});
 
   final String audioURL;
   final String image;
@@ -17,18 +20,23 @@ class AudioPlayerPro extends StatefulWidget {
 }
 
 class _AudioPlayerProSetup extends State<AudioPlayerPro> {
+  Notify notify = Get.find();
+
   bool isHeartPressed = false;
   bool isPlayPressed = false;
+
   // double _value = 0;
   Duration _duration = new Duration();
   Duration _position = new Duration();
-  AudioPlayer advancedPlayer = AudioPlayer();
+  static AudioPlayer advancedPlayer = AudioPlayer();
 
   String song1Name = 'Daadario classical';
 
-  String altImage = "https://www.music-for-music-teachers.com/images/xgirl-with-guitar-black-and-white-502-height.jpg.pagespeed.ic.ok6HIO6Pb2.jpg";
+  String altImage =
+      "https://www.music-for-music-teachers.com/images/xgirl-with-guitar-black-and-white-502-height.jpg.pagespeed.ic.ok6HIO6Pb2.jpg";
 
   bool isNext = false;
+  bool isIconPressed = false;
 
   @override
   void initState() {
@@ -36,18 +44,18 @@ class _AudioPlayerProSetup extends State<AudioPlayerPro> {
     initPlayer();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void initPlayer() {
     advancedPlayer = new AudioPlayer();
-    // ignore: deprecated_member_use
-    // advancedPlayer.durationHandler = (d) => setState(() => _duration = d);
     advancedPlayer.onDurationChanged
         .listen((d) => setState(() => _duration = d));
-    // ignore: deprecated_member_use
-    // advancedPlayer.positionHandler = (p) => setState(() => _position = p);
-    // advancedPlayer.onPositionChanged
-    //     .listen((p) => setState(() => _position = p));
-    advancedPlayer.onAudioPositionChanged
-        .listen((p) => setState(() => _position = p));
+
+    advancedPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
+
   }
 
   void seekToSecond(int second) {
@@ -67,6 +75,7 @@ class _AudioPlayerProSetup extends State<AudioPlayerPro> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
+
     return Scaffold(
       body: Container(
         padding: EdgeInsets.only(
@@ -130,22 +139,21 @@ class _AudioPlayerProSetup extends State<AudioPlayerPro> {
               SizedBox(
                 height: 100,
               ),
-              isNext? Container(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(altImage,
-                      height: 325,
-                      width: 50,
-                      fit: BoxFit.cover),
-                ),
-                width: 325,
-              ):Container(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(widget.image)
-                ),
-                width: 325,
-              ),
+              isNext
+                  ? Container(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(altImage,
+                            height: 325, width: 50, fit: BoxFit.cover),
+                      ),
+                      width: 325,
+                    )
+                  : Container(
+                      child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(widget.image)),
+                      width: 325,
+                    ),
               SizedBox(
                 height: 100,
               ),
@@ -159,7 +167,7 @@ class _AudioPlayerProSetup extends State<AudioPlayerPro> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          isNext? song1Name : widget.name,
+                          isNext ? song1Name : widget.name,
                           style: TextStyle(
                             color: Colors.white,
                             fontFamily: "ProximaNova",
@@ -292,29 +300,90 @@ class _AudioPlayerProSetup extends State<AudioPlayerPro> {
                         child: IconButton(
                           iconSize: 70,
                           alignment: Alignment.center,
-                          icon: (isPlayPressed == true)
-                              ? Icon(
-                                  Icons.pause_circle_filled,
-                                  color: Colors.white,
-                                )
-                              : Icon(
-                                  Icons.play_circle_filled,
-                                  color: Colors.white,
-                                ),
+                          icon: Obx(
+                            () => (notify.isIconPlay.value)
+                                ? Icon(
+                                    Icons.pause_circle_filled,
+                                    color: Colors.white,
+                                  )
+                                : Icon(
+                                    Icons.play_circle_filled,
+                                    color: Colors.white,
+                                  ),
+                          ),
                           onPressed: () {
+                            notify.isIconPlay.value = notify.isIconPlay.value ? false : true;
                             setState(() {
                               isPlayPressed =
                                   isPlayPressed == false ? true : false;
-                              if (isPlayPressed == true) {
+                              print(
+                                  "state of isPlayPressed is : $isPlayPressed");
+                              if (notify.isIconPlay.value) {
                                 print("Playing .....");
-                                if(isNext)
-                                  advancedPlayer.play('https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/09/17/bb/0917bbe1-58c3-6252-d00e-9b70d42ef5dc/mzaf_2269500085377778268.plus.aac.p.m4a');
-                                if(!isNext)
-                                  advancedPlayer.play(widget.audioURL);
+                                advancedPlayer.play(UrlSource('https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/2e/e2/7d/2ee27d35-5e1e-0fd0-42ea-359b5256403e/mzaf_9335390342361255150.plus.aac.p.m4a'));
+                                // if (!isNext) {
+                                //   advancedPlayer.play(
+                                //       'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/2e/e2/7d/2ee27d35-5e1e-0fd0-42ea-359b5256403e/mzaf_9335390342361255150.plus.aac.p.m4a');
+                                // }
                               } else {
                                 print("Paused .....");
                                 advancedPlayer.pause();
                               }
+                                AwesomeNotifications().createNotification(
+                                    content: NotificationContent(
+                                        //simgple notification
+                                        id: 123,
+                                        channelKey: 'basic',
+                                        //set configuration wuth key "basic"
+                                        title: 'Now Playing - ${widget.name}',
+                                        // body: 'This simple notification with action buttons in Flutter App',
+                                        payload: {"name": "FlutterCampus"},
+                                        autoDismissible: false,
+                                        displayOnBackground: true),
+                                    actionButtons: [
+                                      NotificationActionButton(
+                                          key: "play",
+                                          label: "play",
+                                          autoDismissible: false,
+                                          showInCompactView: true,
+                                          buttonType:
+                                              ActionButtonType.KeepOnTop),
+                                      NotificationActionButton(
+                                          key: "pause",
+                                          label: "pause",
+                                          autoDismissible: false,
+                                          buttonType:
+                                              ActionButtonType.KeepOnTop),
+                                      NotificationActionButton(
+                                          key: "stop",
+                                          label: "stop",
+                                          autoDismissible: false,
+                                          buttonType:
+                                              ActionButtonType.KeepOnTop)
+                                    ]);
+                                final myStream = AwesomeNotifications()
+                                    .actionStream
+                                    .asBroadcastStream();
+
+                                myStream.listen((action) {
+                                  if (action.buttonKeyPressed == "play") {
+                                    print("Open button is pressed");
+                                    advancedPlayer.play(UrlSource('https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/2e/e2/7d/2ee27d35-5e1e-0fd0-42ea-359b5256403e/mzaf_9335390342361255150.plus.aac.p.m4a'));
+                                    notify.setIconPlay(true);
+                                  } else if (action.buttonKeyPressed ==
+                                      "pause") {
+                                    advancedPlayer.pause();
+                                    notify.setIconPlay(false);
+                                    print("Delete button is pressed.");
+                                  } else if (action.buttonKeyPressed ==
+                                      "stop") {
+                                    advancedPlayer.stop();
+                                    notify.setIconPlay(false);
+                                    print(action
+                                        .payload); //notification was pressed
+                                  }
+                                });
+
                             });
                           },
                         ),
@@ -375,4 +444,5 @@ class _AudioPlayerProSetup extends State<AudioPlayerPro> {
     );
   }
 }
+
 
